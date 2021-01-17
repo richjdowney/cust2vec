@@ -1,0 +1,105 @@
+dag:
+
+  # Config for DAG run
+  dag_id: "cust2vec-DAG"
+  default_args:
+    owner: "Rich"
+    start_date: 2020-6-20
+    end_date: 2020-6-20
+    depends_on_past: False
+    retries: 0
+    catchup: False
+    email: "richjdowney@gmail.com"
+    email_on_failure: True
+    email_on_retry: False
+  schedule_interval: "@once"
+
+emr:
+
+  # AWS settings for EMR cluster
+  Instances:
+    Ec2KeyName: "spark-cluster"
+    InstanceGroups:
+    - Name: "Master node"
+      InstanceRole: "MASTER"
+      InstanceCount: 1
+      InstanceType: "m5.xlarge"
+    - Name: "Slave nodes"
+      Market: "ON_DEMAND"
+      InstanceRole: "CORE"
+      InstanceType: "m5.xlarge"
+      InstanceCount: 2
+    KeepJobFlowAliveWhenNoSteps: True
+    TerminationProtected: False
+  JobFlowRole: "EMR_EC2_DefaultRole"
+  ServiceRole: "EMR_DefaultRole"
+  Name: "Small"
+  LogUri: "s3://nlp-use-cases/cust2vec-log"
+  ReleaseLabel: "emr-5.32.0"
+  Configurations:
+    - Classification: "spark-env"
+      Configurations:
+      - Classification: "export"
+        Properties:
+          PYSPARK_PYTHON: "/usr/bin/python3"
+  BootstrapActions:
+    - Name: "Install_Dependencies"
+      ScriptBootstrapAction:
+        Path: "s3://nlp-use-cases/bootstrap/install_dependencies.sh"
+  StepConcurrencyLevel: 1
+
+airflow:
+
+  # Config for airflow defaults
+  AwsCredentials: "aws_default"
+
+
+app:
+
+  # Config for files related to running the Spark app on emr
+  RootPath: "/home/ubuntu/cust2vec/"
+  PathToRunners: "/home/ubuntu/cust2vec/spark_runners/"
+  PathToBin: "/home/ubuntu/cust2vec/bin/"
+  PathToEgg: "/home/ubuntu/cust2vec/dist/"
+  PathToUtils: "/home/ubuntu/cust2vec/utils/"
+  EggObject: "cust2vec_egg-0.1-py2.7.egg"
+  StageRunner: "data_staging_runner.py"
+  DataPreProcessingRunner: "data_preprocessing_runner.py"
+  Cust2VecRunner: "cust2vec_model_fit_runner.py"
+  DependenciesShell: "install_dependencies.sh"
+  Requirements: "requirements.txt"
+
+
+s3:
+
+  # Config for s3
+  Bucket: "nlp-use-cases"
+  DataFolder: "dh-data"
+  StagingDataPath: "s3://nlp-use-cases/staging-tables/"
+
+  # Paths to runner files on s3(egg app, main runner)
+  egg: "s3://nlp-use-cases/application/cust2vec_egg-0.1-py2.7.egg"
+  StageRunner: "s3://nlp-use-cases/application/data_staging_runner.py"
+  DataPreProcessingRunner: "s3://nlp-use-cases/application/data_preprocessing_runner.py"
+  Cust2VecRunner: "s3://nlp-use-cases/application/cust2vec_model_fit_runner.py"
+
+DataPreProcessing:
+
+  # Config for data processing
+  Sample: "True"
+  SampleRate: "0.1"
+  NumProds: "4000"
+
+Cust2VecModel:
+
+  # Config for cust2vecmodel
+  Model: "dm"
+  WindowSize: "8"
+  EmbeddingSize: "256"
+  NumEpochs: "1"
+  StepsPerEpoch: "10000"
+  EarlyStoppingPatience: "5"
+  SavePeriod: "1"
+  SavePath: "/home/ubuntu/cust2vec/model_out/cust2vec_model"
+  SaveCustEmbeddings: "/home/ubuntu/cust2vec/model_out/embeddings/cust_embeddings"
+  SaveCustEmbeddingsPeriod: "1"

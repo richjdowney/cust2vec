@@ -1,0 +1,30 @@
+venv.bak/
+
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# Rope project settings
+.ropeproject
+
+# mkdocs documentation
+/site
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+*.env
+*.bak
+**/.idea
+.DS_Store
+.ipynb_checkpoints/
+__pycache__/
+build/
+dist/
+scratch/
+venv/

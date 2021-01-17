@@ -1,0 +1,12 @@
+boto3
+botocore
+numpy
+pandas
+PyYAML
+pydantic
+keras
+tensorflow
+itertools
+random
+abc
+h5py
