@@ -154,7 +154,7 @@ class ConfigCust2VecModel(pydantic.BaseModel):
     # Number of epochs
     NumEpochs: str
 
-    # Stpes per epoch
+    # Steps per epoch
     StepsPerEpoch: str
 
     # Early stopping patience
@@ -170,7 +170,7 @@ class ConfigCust2VecModel(pydantic.BaseModel):
     SaveCustEmbeddings: str
 
     # Number of epochs between embedding saves
-    SaveCustEmbeddingsPeriod: 1
+    SaveCustEmbeddingsPeriod: str
 
 
 class Config(pydantic.BaseModel):

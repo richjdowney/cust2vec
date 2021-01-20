@@ -5,31 +5,28 @@ sys.path.insert(1, "/home/ubuntu/cust2vec")
 import boto3
 import pickle
 from utils.logging_framework import log
-from pyspark.sql import SparkSession
 from keras.utils.vis_utils import plot_model
 from src.models import dm, dbow
 from src.data_processing.generators import dm_generator as batch_dm
 from src.data_processing.generators import dbow_generator as batch_dbow
 
 
-if __name__ == "__main__":
-
-    task = sys.argv[1]
-    bucket = sys.argv[3]
-    model = sys.argv[4]
-    window_size = sys.argv[5]
-    embedding_size = sys.argv[6]
-    num_epochs = sys.argv[7]
-    steps_per_epoch = sys.argv[8]
-    early_stopping_patience = sys.argv[9]
-    save_period = sys.argv[10]
-    save_path = sys.argv[11]
-    save_cust_embeddings = sys.argv[12]
-    save_cust_embeddings_period = sys.argv[13]
+def task_cust2vec_model_fit(
+    bucket,
+    model,
+    window_size,
+    embedding_size,
+    num_epochs,
+    steps_per_epoch,
+    early_stopping_patience,
+    save_period,
+    save_path,
+    save_cust_embeddings,
+    save_cust_embeddings_period,
+    task,
+):
 
     log.info("Running task {}".format(task))
-
-    spark = SparkSession.builder.appName("cust2vec").getOrCreate()
 
     # ========== Download data and dictionaries ==========
 
@@ -71,15 +68,17 @@ if __name__ == "__main__":
     with open("reversed_cust_dictionary.pkl", "rb") as data:
         reversed_cust_dictionary = pickle.load(data)
 
+    # ========== Compile model and get data generator ==========
+
     num_custs = len(cust_index_list)
     num_prods = len(prod_dictionary)
 
-    MODEL_TYPES = {
+    model_types = {
         "dm": (dm.DM, batch_dm.data_generator, batch_dm.batch),
         "dbow": (dbow.DBOW, batch_dbow.data_generator, batch_dbow.batch),
     }
 
-    model_class, data_generator, batcher = MODEL_TYPES[model]
+    model_class, data_generator, batcher = model_types[model]
 
     m = model_class(window_size, num_prods, num_custs, embedding_size=embedding_size)
 
@@ -93,6 +92,8 @@ if __name__ == "__main__":
         show_shapes=True,
         show_layer_names=True,
     )
+
+    # ========== Train model ==========
 
     all_data = batcher(
         data_generator(cust_index_list, all_cust_data, window_size, num_prods)
@@ -110,3 +111,9 @@ if __name__ == "__main__":
     )
 
     elapsed_epochs = len(history.history["loss"])
+
+    if save_path:
+        m.save(save_path.format(epoch=elapsed_epochs))
+
+    if save_cust_embeddings:
+        m.save_doc_embeddings(save_cust_embeddings.format(epoch=elapsed_epochs))

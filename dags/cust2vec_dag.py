@@ -21,7 +21,7 @@ from config.load_config import Config
 from utils.send_email import notify_email
 from utils.logging_framework import log
 from utils.copy_app_to_s3 import copy_app_to_s3
-
+from runners import cust2vec_model_fit_runner
 
 # Load the config file
 config = load_yaml(constants.config_path)
@@ -47,7 +47,7 @@ with DAG(**config["dag"]) as dag:
     )
 
     # Start the cluster
-    cluster_creator = EmrCreateJobFlowOperator(
+    emr_cluster_creator = EmrCreateJobFlowOperator(
         task_id="create_job_flow",
         job_flow_overrides=config["emr"],
         aws_conn_id="aws_default",
@@ -141,64 +141,40 @@ with DAG(**config["dag"]) as dag:
         on_failure_callback=notify_email,
     )
 
-    # ========== CUST2VEC MODEL FIT ==========
-    task = "cust2vec_model_fit"
-    cust2vec_fit = EmrAddStepsOperator(
-        task_id="add_step_{}".format(task),
-        job_flow_id="{{ task_instance.xcom_pull(task_ids='create_job_flow', key='return_value') }}",
-        aws_conn_id="aws_default",
-        steps=[
-            {
-                "Name": "Fit cust2vec models step",
-                "ActionOnFailure": "CONTINUE",
-                "HadoopJarStep": {
-                    "Jar": "command-runner.jar",
-                    "Args": [
-                        "spark-submit",
-                        "--deploy-mode",
-                        "cluster",
-                        "--py-files",
-                        config["s3"]["egg"],
-                        config["s3"]["Cust2VecRunner"],
-                        task,
-                        "{{ execution_date }}",
-                        config["s3"]["Bucket"],
-                        config["Cust2VecModel"]["Model"],
-                        config["Cust2VecModel"]["WindowSize"],
-                        config["Cust2VecModel"]["EmbeddingSize"],
-                        config["Cust2VecModel"]["NumEpochs"],
-                        config["Cust2VecModel"]["StepsPerEpoch"],
-                        config["Cust2VecModel"]["EarlyStoppingPatience"],
-                        config["Cust2VecModel"]["SavePeriod"],
-                        config["Cust2VecModel"]["SavePath"],
-                        config["Cust2VecModel"]["SaveCustEmbeddings"],
-                        config["Cust2VecModel"]["SaveCustEmbeddingsPeriod"],
-                    ],
-                },
-            }
-        ],
-        on_failure_callback=notify_email,
-    )
-
-    step_name = "add_step_{}".format(task)
-    cust2vec_fit_step_sensor = EmrStepSensor(
-        task_id="watch_{}".format(task),
-        job_flow_id="{{ task_instance.xcom_pull('create_job_flow', key='return_value') }}",
-        step_id="{{{{ task_instance.xcom_pull(task_ids='{}', key='return_value')[0] }}}}".format(
-            step_name
-        ),
-        aws_conn_id="aws_default",
-        on_failure_callback=notify_email,
-    )
-
-    # Remove the cluster
-    cluster_remover = EmrTerminateJobFlowOperator(
-        task_id="remove_cluster",
+    # Remove the EMR cluster
+    emr_cluster_remover = EmrTerminateJobFlowOperator(
+        task_id="remove_EMR_cluster",
         job_flow_id="{{ task_instance.xcom_pull(task_ids='create_job_flow', key='return_value') }}",
         aws_conn_id="aws_default",
         on_failure_callback=notify_email,
         trigger_rule=TriggerRule.ONE_SUCCESS,
     )
 
-    create_egg >> upload_code >> cluster_creator >> data_staging >> data_staging_step_sensor >> data_preprocessing \
-      >> data_preprocessing_step_sensor >> cust2vec_fit >> cust2vec_fit_step_sensor >> cluster_remover
+    # ========== CUST2VEC MODEL FIT ==========
+    task = "cust2vec_model_fit"
+    cust2vec_fit = PythonOperator(
+        task_id="run_cust2vec_model_fit",
+        dag=dag,
+        provide_context=False,
+        python_callable=cust2vec_model_fit_runner.task_cust2vec_model_fit,
+        op_kwargs={
+            "bucket": config["s3"]["Bucket"],
+            "model": config["Cust2VecModel"]["Model"],
+            "window_size": config["Cust2VecModel"]["WindowSize"],
+            "embedding_size": config["Cust2VecModel"]["EmbeddingSize"],
+            "num_epochs": config["Cust2VecModel"]["NumEpochs"],
+            "steps_per_epoch": config["Cust2VecModel"]["StepsPerEpoch"],
+            "early_stopping_patience": config["Cust2VecModel"]["EarlyStoppingPatience"],
+            "save_period": config["Cust2VecModel"]["SavePeriod"],
+            "save_path": config["Cust2VecModel"]["SavePath"],
+            "save_cust_embeddings": config["Cust2VecModel"]["SaveCustEmbeddings"],
+            "save_cust_embeddings_period": config["Cust2VecModel"][
+                "SaveCustEmbeddingsPeriod"
+            ],
+            "task": task,
+        },
+        on_failure_callback=notify_email,
+    )
+
+    create_egg >> upload_code >> emr_cluster_creator >> data_staging >> data_staging_step_sensor >> data_preprocessing\
+    >> data_preprocessing_step_sensor >> emr_cluster_remover >> cust2vec_fit

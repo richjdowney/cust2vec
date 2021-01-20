@@ -90,7 +90,7 @@ class _SaveCustEmbeddings(Callback):
         self.path = path
         self.period = period
 
-    def on_epoch_end(self, epoch, logs=None):
+    def on_epoch_end(self, epoch):
         if epoch % self.period != 0:
             return
 

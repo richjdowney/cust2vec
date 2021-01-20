@@ -6,9 +6,6 @@ from typing import List, Dict
 def add_step_to_emr(
     task_id: str, egg: str, runner: str, bucket="", data_folder="",
         staging_path="", execution_date="", sample="", sample_rate="", num_prods="",
-        model_input_path="", model="", window_size="", embedding_size="",num_epochs="",
-        steps_per_epoch="", early_stopping_patience="",save_period="",save_path="",
-        save_cust_embeddings="",save_cust_embeddings_period="",
 ) -> List[Dict]:
     """Function to add a step to emr
 
@@ -34,28 +31,6 @@ def add_step_to_emr(
         the percentage of the DataFrame to sample
     num_prods : str
         the number of products to use for cust2vec models training
-    model_input_path : str
-        path to the cust2vec models input data
-    model : str
-        determines if the 'dm' or 'dbow' cust2vec model should be used
-    window_size: str
-        the window size to use for the cust2vec context
-    embedding_size : str
-        the size of the embeddings
-    num_epochs : str
-        the number of epochs to run the cust2vec model
-    steps_per_epoch : str
-        the number of steps per epoch for the cust2vec model
-    early_stopping_patience : str
-        patience for early stopping
-    save_period : str
-        save period for cust2vec model e.g. save every X epochs
-    save_path : str
-        path to save the cust2vec model
-    save_cust_embeddings : str
-        path to save the customer embeddings
-    save_cust_embeddings_period : str
-        save period for customer embeddings e.g. save every X epochs
 
     """
 
@@ -80,17 +55,6 @@ def add_step_to_emr(
                     sample,
                     sample_rate,
                     num_prods,
-                    model_input_path,
-                    model,
-                    window_size,
-                    embedding_size,
-                    num_epochs,
-                    steps_per_epoch,
-                    early_stopping_patience,
-                    save_period,
-                    save_path,
-                    save_cust_embeddings,
-                    save_cust_embeddings_period,
                 ],
             },
         }

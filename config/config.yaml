@@ -35,7 +35,7 @@ emr:
   ServiceRole: "EMR_DefaultRole"
   Name: "Small"
   LogUri: "s3://nlp-use-cases/cust2vec-log"
-  ReleaseLabel: "emr-5.32.0"
+  ReleaseLabel: "emr-6.2.0"
   Configurations:
     - Classification: "spark-env"
       Configurations:
@@ -58,7 +58,7 @@ app:
 
   # Config for files related to running the Spark app on emr
   RootPath: "/home/ubuntu/cust2vec/"
-  PathToRunners: "/home/ubuntu/cust2vec/spark_runners/"
+  PathToRunners: "/home/ubuntu/cust2vec/runners/"
   PathToBin: "/home/ubuntu/cust2vec/bin/"
   PathToEgg: "/home/ubuntu/cust2vec/dist/"
   PathToUtils: "/home/ubuntu/cust2vec/utils/"
