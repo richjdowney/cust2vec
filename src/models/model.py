@@ -90,11 +90,12 @@ class _SaveCustEmbeddings(Callback):
         self.path = path
         self.period = period
 
-    def on_epoch_end(self, epoch):
+    def on_epoch_end(self, epoch, logs=None):
         if epoch % self.period != 0:
             return
 
         path = self.path.format(epoch=epoch)
+        logger.info("Saving customer embeddings to {}".format(path))
         embeddings = _cust_embeddings_from_model(self.model)
         _write_cust_embeddings(embeddings, path)
 

@@ -94,12 +94,12 @@ Cust2VecModel:
 
   # Config for cust2vecmodel
   Model: "dm"
-  WindowSize: "8"
-  EmbeddingSize: "256"
-  NumEpochs: "1"
-  StepsPerEpoch: "10000"
-  EarlyStoppingPatience: "5"
-  SavePeriod: "1"
+  WindowSize: 8
+  EmbeddingSize: 256
+  NumEpochs: 1
+  StepsPerEpoch: 10000
+  EarlyStoppingPatience: 5
+  SavePeriod: 1
   SavePath: "/home/ubuntu/cust2vec/model_out/cust2vec_model"
-  SaveCustEmbeddings: "/home/ubuntu/cust2vec/model_out/embeddings/cust_embeddings"
-  SaveCustEmbeddingsPeriod: "1"
+  SaveCustEmbeddings: "/home/ubuntu/cust2vec/model_out/embeddings/cust_embeddings.hdf5"
+  SaveCustEmbeddingsPeriod: 1

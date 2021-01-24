@@ -47,108 +47,108 @@ with DAG(**config["dag"]) as dag:
     )
 
     # Start the cluster
-    emr_cluster_creator = EmrCreateJobFlowOperator(
-        task_id="create_job_flow",
-        job_flow_overrides=config["emr"],
-        aws_conn_id="aws_default",
-        emr_conn_id="emr_default",
-        on_failure_callback=notify_email,
-    )
-
-    # ========== DATA STAGING ==========
-    task = "data_staging"
-    data_staging = EmrAddStepsOperator(
-        task_id="add_step_{}".format(task),
-        job_flow_id="{{ task_instance.xcom_pull(task_ids='create_job_flow', key='return_value') }}",
-        aws_conn_id="aws_default",
-        steps=[
-            {
-                "Name": "Run data staging step",
-                "ActionOnFailure": "CONTINUE",
-                "HadoopJarStep": {
-                    "Jar": "command-runner.jar",
-                    "Args": [
-                        "spark-submit",
-                        "--deploy-mode",
-                        "cluster",
-                        "--py-files",
-                        config["s3"]["egg"],
-                        config["s3"]["StageRunner"],
-                        task,
-                        config["s3"]["Bucket"],
-                        config["s3"]["DataFolder"],
-                        config["s3"]["StagingDataPath"],
-                        "{{ execution_date }}",
-                    ],
-                },
-            }
-        ],
-        on_failure_callback=notify_email,
-    )
-
-    step_name = "add_step_{}".format(task)
-    data_staging_step_sensor = EmrStepSensor(
-        task_id="watch_{}".format(task),
-        job_flow_id="{{ task_instance.xcom_pull('create_job_flow', key='return_value') }}",
-        step_id="{{{{ task_instance.xcom_pull(task_ids='{}', key='return_value')[0] }}}}".format(
-            step_name
-        ),
-        aws_conn_id="aws_default",
-        on_failure_callback=notify_email,
-    )
-
-    # ========== DATA PRE-PROCESSING ==========
-    task = "data_preprocessing"
-    data_preprocessing = EmrAddStepsOperator(
-        task_id="add_step_{}".format(task),
-        job_flow_id="{{ task_instance.xcom_pull(task_ids='create_job_flow', key='return_value') }}",
-        aws_conn_id="aws_default",
-        steps=[
-            {
-                "Name": "Run data pre-processing step",
-                "ActionOnFailure": "CONTINUE",
-                "HadoopJarStep": {
-                    "Jar": "command-runner.jar",
-                    "Args": [
-                        "spark-submit",
-                        "--deploy-mode",
-                        "cluster",
-                        "--py-files",
-                        config["s3"]["egg"],
-                        config["s3"]["DataPreProcessingRunner"],
-                        task,
-                        config["s3"]["Bucket"],
-                        config["s3"]["StagingDataPath"],
-                        "{{ execution_date }}",
-                        config["DataPreProcessing"]["Sample"],
-                        config["DataPreProcessing"]["SampleRate"],
-                        config["DataPreProcessing"]["NumProds"],
-                    ],
-                },
-            }
-        ],
-        on_failure_callback=notify_email,
-    )
-
-    step_name = "add_step_{}".format(task)
-    data_preprocessing_step_sensor = EmrStepSensor(
-        task_id="watch_{}".format(task),
-        job_flow_id="{{ task_instance.xcom_pull('create_job_flow', key='return_value') }}",
-        step_id="{{{{ task_instance.xcom_pull(task_ids='{}', key='return_value')[0] }}}}".format(
-            step_name
-        ),
-        aws_conn_id="aws_default",
-        on_failure_callback=notify_email,
-    )
-
-    # Remove the EMR cluster
-    emr_cluster_remover = EmrTerminateJobFlowOperator(
-        task_id="remove_EMR_cluster",
-        job_flow_id="{{ task_instance.xcom_pull(task_ids='create_job_flow', key='return_value') }}",
-        aws_conn_id="aws_default",
-        on_failure_callback=notify_email,
-        trigger_rule=TriggerRule.ONE_SUCCESS,
-    )
+    # emr_cluster_creator = EmrCreateJobFlowOperator(
+    #     task_id="create_job_flow",
+    #     job_flow_overrides=config["emr"],
+    #     aws_conn_id="aws_default",
+    #     emr_conn_id="emr_default",
+    #     on_failure_callback=notify_email,
+    # )
+    #
+    # # ========== DATA STAGING ==========
+    # task = "data_staging"
+    # data_staging = EmrAddStepsOperator(
+    #     task_id="add_step_{}".format(task),
+    #     job_flow_id="{{ task_instance.xcom_pull(task_ids='create_job_flow', key='return_value') }}",
+    #     aws_conn_id="aws_default",
+    #     steps=[
+    #         {
+    #             "Name": "Run data staging step",
+    #             "ActionOnFailure": "CONTINUE",
+    #             "HadoopJarStep": {
+    #                 "Jar": "command-runner.jar",
+    #                 "Args": [
+    #                     "spark-submit",
+    #                     "--deploy-mode",
+    #                     "cluster",
+    #                     "--py-files",
+    #                     config["s3"]["egg"],
+    #                     config["s3"]["StageRunner"],
+    #                     task,
+    #                     config["s3"]["Bucket"],
+    #                     config["s3"]["DataFolder"],
+    #                     config["s3"]["StagingDataPath"],
+    #                     "{{ execution_date }}",
+    #                 ],
+    #             },
+    #         }
+    #     ],
+    #     on_failure_callback=notify_email,
+    # )
+    #
+    # step_name = "add_step_{}".format(task)
+    # data_staging_step_sensor = EmrStepSensor(
+    #     task_id="watch_{}".format(task),
+    #     job_flow_id="{{ task_instance.xcom_pull('create_job_flow', key='return_value') }}",
+    #     step_id="{{{{ task_instance.xcom_pull(task_ids='{}', key='return_value')[0] }}}}".format(
+    #         step_name
+    #     ),
+    #     aws_conn_id="aws_default",
+    #     on_failure_callback=notify_email,
+    # )
+    #
+    # # ========== DATA PRE-PROCESSING ==========
+    # task = "data_preprocessing"
+    # data_preprocessing = EmrAddStepsOperator(
+    #     task_id="add_step_{}".format(task),
+    #     job_flow_id="{{ task_instance.xcom_pull(task_ids='create_job_flow', key='return_value') }}",
+    #     aws_conn_id="aws_default",
+    #     steps=[
+    #         {
+    #             "Name": "Run data pre-processing step",
+    #             "ActionOnFailure": "CONTINUE",
+    #             "HadoopJarStep": {
+    #                 "Jar": "command-runner.jar",
+    #                 "Args": [
+    #                     "spark-submit",
+    #                     "--deploy-mode",
+    #                     "cluster",
+    #                     "--py-files",
+    #                     config["s3"]["egg"],
+    #                     config["s3"]["DataPreProcessingRunner"],
+    #                     task,
+    #                     config["s3"]["Bucket"],
+    #                     config["s3"]["StagingDataPath"],
+    #                     "{{ execution_date }}",
+    #                     config["DataPreProcessing"]["Sample"],
+    #                     config["DataPreProcessing"]["SampleRate"],
+    #                     config["DataPreProcessing"]["NumProds"],
+    #                 ],
+    #             },
+    #         }
+    #     ],
+    #     on_failure_callback=notify_email,
+    # )
+    #
+    # step_name = "add_step_{}".format(task)
+    # data_preprocessing_step_sensor = EmrStepSensor(
+    #     task_id="watch_{}".format(task),
+    #     job_flow_id="{{ task_instance.xcom_pull('create_job_flow', key='return_value') }}",
+    #     step_id="{{{{ task_instance.xcom_pull(task_ids='{}', key='return_value')[0] }}}}".format(
+    #         step_name
+    #     ),
+    #     aws_conn_id="aws_default",
+    #     on_failure_callback=notify_email,
+    # )
+    #
+    # # Remove the EMR cluster
+    # emr_cluster_remover = EmrTerminateJobFlowOperator(
+    #     task_id="remove_EMR_cluster",
+    #     job_flow_id="{{ task_instance.xcom_pull(task_ids='create_job_flow', key='return_value') }}",
+    #     aws_conn_id="aws_default",
+    #     on_failure_callback=notify_email,
+    #     trigger_rule=TriggerRule.ONE_SUCCESS,
+    # )
 
     # ========== CUST2VEC MODEL FIT ==========
     task = "cust2vec_model_fit"
@@ -176,5 +176,7 @@ with DAG(**config["dag"]) as dag:
         on_failure_callback=notify_email,
     )
 
-    create_egg >> upload_code >> emr_cluster_creator >> data_staging >> data_staging_step_sensor >> data_preprocessing\
-    >> data_preprocessing_step_sensor >> emr_cluster_remover >> cust2vec_fit
+    # create_egg >> upload_code >> emr_cluster_creator >> data_staging >> data_staging_step_sensor >> data_preprocessing\
+    # >> data_preprocessing_step_sensor >> emr_cluster_remover >> cust2vec_fit
+
+    create_egg >> upload_code >> cust2vec_fit

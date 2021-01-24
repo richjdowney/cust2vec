@@ -146,22 +146,22 @@ class ConfigCust2VecModel(pydantic.BaseModel):
     Model: str
 
     # Window size for context
-    WindowSize: str
+    WindowSize: int
 
     # Size for embeddings
-    EmbeddingSize: str
+    EmbeddingSize: int
 
     # Number of epochs
-    NumEpochs: str
+    NumEpochs: int
 
     # Steps per epoch
-    StepsPerEpoch: str
+    StepsPerEpoch: int
 
     # Early stopping patience
-    EarlyStoppingPatience: str
+    EarlyStoppingPatience: int
 
     # Number of epochs per save
-    SavePeriod: str
+    SavePeriod: int
 
     # Path to save cust2vec model
     SavePath: str
@@ -170,7 +170,7 @@ class ConfigCust2VecModel(pydantic.BaseModel):
     SaveCustEmbeddings: str
 
     # Number of epochs between embedding saves
-    SaveCustEmbeddingsPeriod: str
+    SaveCustEmbeddingsPeriod: int
 
 
 class Config(pydantic.BaseModel):
