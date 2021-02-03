@@ -88,8 +88,11 @@ class ConfigApp(pydantic.BaseModel):
     # Name of Spark runner to pre-process the models data
     DataPreProcessingRunner: str
 
-    # Name of Spark runner to fit cust2vec models
+    # Name of Python runner to fit cust2vec models
     Cust2VecRunner: str
+
+    # Name of Spark runner to run profiling
+    ProfilingRunner: str
 
     # Name of the shell script for bootstrapping
     DependenciesShell: str
@@ -126,6 +129,12 @@ class ConfigS3(pydantic.BaseModel):
     # Path to staging data
     StagingDataPath: str
 
+    # Path to scored k-means data
+    ScoredKMeansPath: str
+
+    # Path to save k-means model
+    SavedKmeansModel: str
+
     # Path to egg file
     egg: str
 
@@ -137,6 +146,9 @@ class ConfigS3(pydantic.BaseModel):
 
     # Path to cust2vec models train runner file
     Cust2VecRunner: str
+
+    # Path to profiling runner file
+    ProfilingRunner: str
 
 
 class ConfigCust2VecModel(pydantic.BaseModel):
@@ -173,6 +185,16 @@ class ConfigCust2VecModel(pydantic.BaseModel):
     SaveCustEmbeddingsPeriod: int
 
 
+class ConfigKMeansModel(pydantic.BaseModel):
+    """Configuration for k-means model"""
+
+    # Create cost plot?
+    CreateCostPlot: str
+
+    # Number of clusters to create
+    NumClusts: str
+
+
 class Config(pydantic.BaseModel):
     """Main configuration"""
 
@@ -183,6 +205,7 @@ class Config(pydantic.BaseModel):
     airflow: ConfigAirflow
     DataPreProcessing: ConfigDataPreProcessing
     Cust2VecModel: ConfigCust2VecModel
+    KMeansModel: ConfigKMeansModel
 
 
 class ConfigException(Exception):

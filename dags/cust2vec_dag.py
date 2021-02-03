@@ -47,14 +47,14 @@ with DAG(**config["dag"]) as dag:
     )
 
     # Start the cluster
-    # emr_cluster_creator = EmrCreateJobFlowOperator(
-    #     task_id="create_job_flow",
-    #     job_flow_overrides=config["emr"],
-    #     aws_conn_id="aws_default",
-    #     emr_conn_id="emr_default",
-    #     on_failure_callback=notify_email,
-    # )
-    #
+    emr_cluster_creator = EmrCreateJobFlowOperator(
+        task_id="create_job_flow",
+        job_flow_overrides=config["emr"],
+        aws_conn_id="aws_default",
+        emr_conn_id="emr_default",
+        on_failure_callback=notify_email,
+    )
+
     # # ========== DATA STAGING ==========
     # task = "data_staging"
     # data_staging = EmrAddStepsOperator(
@@ -151,32 +151,126 @@ with DAG(**config["dag"]) as dag:
     # )
 
     # ========== CUST2VEC MODEL FIT ==========
-    task = "cust2vec_model_fit"
-    cust2vec_fit = PythonOperator(
-        task_id="run_cust2vec_model_fit",
-        dag=dag,
-        provide_context=False,
-        python_callable=cust2vec_model_fit_runner.task_cust2vec_model_fit,
-        op_kwargs={
-            "bucket": config["s3"]["Bucket"],
-            "model": config["Cust2VecModel"]["Model"],
-            "window_size": config["Cust2VecModel"]["WindowSize"],
-            "embedding_size": config["Cust2VecModel"]["EmbeddingSize"],
-            "num_epochs": config["Cust2VecModel"]["NumEpochs"],
-            "steps_per_epoch": config["Cust2VecModel"]["StepsPerEpoch"],
-            "early_stopping_patience": config["Cust2VecModel"]["EarlyStoppingPatience"],
-            "save_period": config["Cust2VecModel"]["SavePeriod"],
-            "save_path": config["Cust2VecModel"]["SavePath"],
-            "save_cust_embeddings": config["Cust2VecModel"]["SaveCustEmbeddings"],
-            "save_cust_embeddings_period": config["Cust2VecModel"][
-                "SaveCustEmbeddingsPeriod"
-            ],
-            "task": task,
-        },
+    # task = "cust2vec_model_fit"
+    # cust2vec_fit = PythonOperator(
+    #     task_id="run_cust2vec_model_fit",
+    #     dag=dag,
+    #     provide_context=False,
+    #     python_callable=cust2vec_model_fit_runner.task_cust2vec_model_fit,
+    #     op_kwargs={
+    #         "bucket": config["s3"]["Bucket"],
+    #         "model": config["Cust2VecModel"]["Model"],
+    #         "window_size": config["Cust2VecModel"]["WindowSize"],
+    #         "embedding_size": config["Cust2VecModel"]["EmbeddingSize"],
+    #         "num_epochs": config["Cust2VecModel"]["NumEpochs"],
+    #         "steps_per_epoch": config["Cust2VecModel"]["StepsPerEpoch"],
+    #         "early_stopping_patience": config["Cust2VecModel"]["EarlyStoppingPatience"],
+    #         "save_period": config["Cust2VecModel"]["SavePeriod"],
+    #         "save_path": config["Cust2VecModel"]["SavePath"],
+    #         "save_cust_embeddings": config["Cust2VecModel"]["SaveCustEmbeddings"],
+    #         "save_cust_embeddings_period": config["Cust2VecModel"][
+    #             "SaveCustEmbeddingsPeriod"
+    #         ],
+    #         "task": task,
+    #     },
+    #     on_failure_callback=notify_email,
+    # )
+    #
+    # # ========== CUSTOMER CLUSTERING ==========
+    # task = "customer_clustering"
+    # customer_clustering = EmrAddStepsOperator(
+    #     task_id="add_step_{}".format(task),
+    #     job_flow_id="{{ task_instance.xcom_pull(task_ids='create_job_flow', key='return_value') }}",
+    #     aws_conn_id="aws_default",
+    #     steps=[
+    #         {
+    #             "Name": "Run customer clustering step",
+    #             "ActionOnFailure": "CONTINUE",
+    #             "HadoopJarStep": {
+    #                 "Jar": "command-runner.jar",
+    #                 "Args": [
+    #                     "spark-submit",
+    #                     "--deploy-mode",
+    #                     "cluster",
+    #                     "--py-files",
+    #                     config["s3"]["egg"],
+    #                     config["s3"]["CustClusteringRunner"],
+    #                     task,
+    #                     config["s3"]["Bucket"],
+    #                     config["KMeansModel"]["CreateCostPlot"],
+    #                     config["s3"]["ScoredKMeansPath"],
+    #                     config["s3"]["SavedKmeansModel"],
+    #                     config["KMeansModel"]["NumClusts"],
+    #                     "{{ execution_date }}",
+    #                 ],
+    #             },
+    #         }
+    #     ],
+    #     on_failure_callback=notify_email,
+    # )
+    #
+    # step_name = "add_step_{}".format(task)
+    # cust_clustering_step_sensor = EmrStepSensor(
+    #     task_id="watch_{}".format(task),
+    #     job_flow_id="{{ task_instance.xcom_pull('create_job_flow', key='return_value') }}",
+    #     step_id="{{{{ task_instance.xcom_pull(task_ids='{}', key='return_value')[0] }}}}".format(
+    #         step_name
+    #     ),
+    #     aws_conn_id="aws_default",
+    #     on_failure_callback=notify_email,
+    # )
+
+    # ========== CUSTOMER PROFILING ==========
+    task = "customer_profiling"
+    customer_profiling = EmrAddStepsOperator(
+        task_id="add_step_{}".format(task),
+        job_flow_id="{{ task_instance.xcom_pull(task_ids='create_job_flow', key='return_value') }}",
+        aws_conn_id="aws_default",
+        steps=[
+            {
+                "Name": "Run cluster profiling step",
+                "ActionOnFailure": "CONTINUE",
+                "HadoopJarStep": {
+                    "Jar": "command-runner.jar",
+                    "Args": [
+                        "spark-submit",
+                        "--deploy-mode",
+                        "cluster",
+                        "--py-files",
+                        config["s3"]["egg"],
+                        config["s3"]["ProfilingRunner"],
+                        task,
+                        config["s3"]["Bucket"],
+                        config["s3"]["StagingDataPath"],
+                        config["s3"]["ScoredKMeansPath"],
+                        "{{ execution_date }}",
+                    ],
+                },
+            }
+        ],
         on_failure_callback=notify_email,
     )
 
-    # create_egg >> upload_code >> emr_cluster_creator >> data_staging >> data_staging_step_sensor >> data_preprocessing\
-    # >> data_preprocessing_step_sensor >> emr_cluster_remover >> cust2vec_fit
+    step_name = "add_step_{}".format(task)
+    customer_profiling_step_sensor = EmrStepSensor(
+        task_id="watch_{}".format(task),
+        job_flow_id="{{ task_instance.xcom_pull('create_job_flow', key='return_value') }}",
+        step_id="{{{{ task_instance.xcom_pull(task_ids='{}', key='return_value')[0] }}}}".format(
+            step_name
+        ),
+        aws_conn_id="aws_default",
+        on_failure_callback=notify_email,
+    )
 
-    create_egg >> upload_code >> cust2vec_fit
+    # Remove the EMR cluster
+    emr_cluster_remover = EmrTerminateJobFlowOperator(
+        task_id="remove_EMR_cluster",
+        job_flow_id="{{ task_instance.xcom_pull(task_ids='create_job_flow', key='return_value') }}",
+        aws_conn_id="aws_default",
+        on_failure_callback=notify_email,
+        trigger_rule=TriggerRule.ONE_SUCCESS,
+    )
+
+    create_egg >> upload_code >> emr_cluster_creator >> customer_profiling >> customer_profiling_step_sensor >> \
+    emr_cluster_remover
+

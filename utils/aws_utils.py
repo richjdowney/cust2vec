@@ -6,6 +6,8 @@ from typing import List, Dict
 def add_step_to_emr(
     task_id: str, egg: str, runner: str, bucket="", data_folder="",
         staging_path="", execution_date="", sample="", sample_rate="", num_prods="",
+        create_cost_plot="", scored_kmeans_path="", saved_kmeans_model_path="",
+        num_clusters="",
 ) -> List[Dict]:
     """Function to add a step to emr
 
@@ -31,6 +33,14 @@ def add_step_to_emr(
         the percentage of the DataFrame to sample
     num_prods : str
         the number of products to use for cust2vec models training
+    create_cost_plot : str
+        should the cost plot be created for k-means?
+    scored_kmeans_path : str
+        path to the scored k-means data
+    saved_kmeans_model_path : str
+        path to save k-means model
+    num_clusters : str
+        number of clusters for k-means
 
     """
 
@@ -55,6 +65,10 @@ def add_step_to_emr(
                     sample,
                     sample_rate,
                     num_prods,
+                    create_cost_plot,
+                    scored_kmeans_path,
+                    saved_kmeans_model_path,
+                    num_clusters,
                 ],
             },
         }

@@ -31,7 +31,7 @@ def task_cust2vec_model_fit(
     # ========== Download data and dictionaries ==========
 
     log.info("Download data and dictionaries from s3")
-    s3 = boto3.client('s3')
+    s3 = boto3.client("s3")
 
     with open("all_cust_data.txt", "wb") as data:
         s3.download_fileobj(bucket, "all_cust_data.txt", data)
@@ -117,3 +117,9 @@ def task_cust2vec_model_fit(
 
     if save_cust_embeddings:
         m.save_cust_embeddings(save_cust_embeddings.format(epoch=elapsed_epochs))
+
+    log.info("Uploading embeddings to s3")
+    s3 = boto3.client("s3")
+    s3.upload_file(
+        Filename="cust_embeddings.hdf5", Key="cust_embeddings.hdf5", Bucket=bucket
+    )
