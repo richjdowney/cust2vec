@@ -77,7 +77,7 @@ this solution:
  The charts and tables below show profiles of Customer Price Sensitivity, Dominant Basket Mission, top level 30 
  categories and the rank order of level 40 departments.
  
- ![](Images/Profiles.PNG)
+ ![](Images/profiles.PNG)
  
  It is clear from the profiles that the cust2vec and clustering approach has generated segments that discriminate 
  across these variables.  With further training and tuning of the cust2vec model it is likely that this discrimination 
